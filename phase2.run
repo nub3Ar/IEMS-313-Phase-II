@@ -1,0 +1,6 @@
+reset;
+option ampl_include '/Users/david19990606/Desktop/AMPL_file'; 
+model phase2_ridge.mod;
+data phase2.dat;
+option solver './minos';
+solve;
