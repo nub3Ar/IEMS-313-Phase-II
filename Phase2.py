@@ -2,30 +2,73 @@ from amplpy import AMPL, Environment, DataFrame
 import pandas as pd
 import math
 
-#####before you run, pip install pandas, pip install amplpy
+#####before you run, pip install pandas, pip install amplpy, stick with python3
 
 
 ############    SETUP   ############
-training_data= pd.read_csv(open('Training_Dataset.csv'))
 validating_data = pd.read_csv(open('Validation_Dataset.csv'))
 #dimensions of the data
-dt1,dt2 = training_data.shape
 dv1,dv2 = validating_data.shape
+print(dv1, dv2)
 #column names
-col_names_tr = training_data.columns.values
 col_names_va = validating_data.columns.values
 #x/y variable separation
-y_tr = training_data.loc[0::,'Label']
-x_tr = training_data.loc[0::,'1'::]
-y_va = validating_data.loc[0::,'Label']
+y_va = validating_data.loc[0::,'Label'].values.tolist()
 x_va = validating_data.loc[0::,'Item'::]
 
-
-
 ############AMPL#################
+
 ampl = AMPL(Environment('/home/nub3ar/AMPL'))
 
-ampl.read('Phase II.mod')
+ampl.read('phase2_ridge.mod')
+ampl.readData('phase2.dat')
+
+ampl.solve()
+a = ampl.getVariable('a').getValues().toList()
+b = ampl.getVariable('b').value()
+
+predictions = []
+
+for i in range (0, dv1):
+    x = x_va.iloc[[i]].values.tolist()
+    x = x[0][2:]
+    y = b
+    for i in range(0, dv2-2):
+        y += a[i][1]*x[i]
+    if y >= 0:
+        predictions.append(1)
+    elif y< 0:
+        predictions.append(-1)
+    else:
+        print("error has occured")
+
+correctyes = 0
+correctno = 0
+incorrectyes = 0
+incorrectno = 0
+
+for i in range (0, dv1):
+    if y_va[i] == 1:
+        if predictions[i] == 1:
+            correctyes += 1
+        else:
+            incorrectno += 1
+    else:
+        if predictions[i] == -1:
+            correctno += 1
+        else:
+            incorrectyes += 1
+
+print(incorrectyes/104)
+print(incorrectno/104)
+Accuracy = (correctyes+correctno)/(correctyes+correctno+incorrectno+incorrectyes)
+print("Accuracy:", Accuracy)
+
+
+
+
+#legacy code used for getting data from excel
+'''
 ampl.getSet('feature').setValues(range(0,60))
 ampl.getSet('object').setValues(range(0,104))
 
@@ -47,12 +90,6 @@ y_df.setValues({
         for i, object in enumerate(range(0,104))
 })
 
-print(y_df)
 ampl.setData(x_df)
 ampl.setData(y_df)
-
-
-
-ampl.solve()
-b = ampl.getVariable('b').value()
-print(b)
+'''
