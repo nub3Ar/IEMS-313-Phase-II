@@ -11,7 +11,7 @@ var error_measure {i in object};
 var coe_sum;
 
 param x {i in object, j in data};
-param tuning := 0.5;
+param tuning := .001;
 
 minimize error: sum{i in object} error_measure[i];
 
