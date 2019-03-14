@@ -6,7 +6,14 @@ import math
 
 
 ############    SETUP   ############
-validating_data = pd.read_csv(open('Validation_Dataset.csv'))
+training_dat = input("What's the directory of your training .dat file?")
+validating_dir = input("What's the directory of your validating set?")
+model_dir = input("What's the directory of your model?")
+ampl_dir = input("Where is ampl installed on your computer?")
+ampl = AMPL(Environment(ampl_dir))
+ampl.read(model_dir)
+ampl.readData(training_dat)
+validating_data = pd.read_csv(open(validating_dir))
 #dimensions of the data
 dv1,dv2 = validating_data.shape
 print(dv1, dv2)
@@ -18,14 +25,12 @@ x_va = validating_data.loc[0::,'Item'::]
 
 ############AMPL#################
 
-ampl = AMPL(Environment('/home/nub3ar/AMPL'))
-
-ampl.read('phase2_ridge.mod')
-ampl.readData('phase2.dat')
 
 ampl.solve()
 a = ampl.getVariable('a').getValues().toList()
 b = ampl.getVariable('b').value()
+print("a:", a)
+print("b:", b)
 
 predictions = []
 
@@ -59,8 +64,8 @@ for i in range (0, dv1):
         else:
             incorrectyes += 1
 
-print(incorrectyes/104)
-print(incorrectno/104)
+print("False Positive:", incorrectyes/104)
+print("False Negative:", incorrectno/104)
 Accuracy = (correctyes+correctno)/(correctyes+correctno+incorrectno+incorrectyes)
 print("Accuracy:", Accuracy)
 
