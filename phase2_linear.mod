@@ -23,8 +23,3 @@ subject to scaling2{i in object}: yhat[i] <= -1 + 1000000 * (1-m[i]) ;
 
 subject to error_msurACTING{i in object}: error_measure[i] >= 1 - x[i,0] * yhat[i];
 subject to error_msurNONACTING{i in object}: error_measure[i] >= 0;
-<<<<<<< HEAD
-
-
-=======
->>>>>>> 22a9008a2ab2ca00156e48b0e5d105c7209e8677
