@@ -4,12 +4,11 @@ import math
 
 #####before you run, pip install pandas, pip install amplpy, stick with python3
 
-
 ############    SETUP   ############
 training_dat = input("What's the directory of your training .dat file?")
 validating_dir = input("What's the directory of your validating set?")
 model_dir = input("What's the directory of your model?")
-ampl_dir = input("Where is ampl installed on your computer?")
+ampl_dir = input("Where is ampl installed on your computer?") #"E:\ampl_mswin64"
 validating_data = pd.read_csv(open(validating_dir))
 #dimensions of the data
 dv1,dv2 = validating_data.shape
@@ -22,19 +21,24 @@ x_va = validating_data.loc[0::,'Item'::]
 
 ############AMPL#################
 ampl = AMPL(Environment(ampl_dir))
+
+
+ampl.reset()
+tuning = ampl.getParameter("tuning")
+tuning.SetValues(0.00001*index)
 ampl.read(model_dir)
 ampl.readData(training_dat)
 ampl.solve()
 a = ampl.getVariable('a').getValues().toList()
 b = ampl.getVariable('b').value()
 
-
-y_value = []
-predictions = []
-
+#parsing the coefficients
 a_list = []
 for i in range(0, dv2-2):
     a_list.append(a[i][1])
+
+#getting the predicted values
+y_value = []
 for i in range (0, dv1):
     x = x_va.iloc[[i]].values.tolist()
     x = x[0][2:]
@@ -42,13 +46,9 @@ for i in range (0, dv1):
     for j in range(0, dv2-2):
         y += a[j][1]*x[j]
     y_value.append(y)
-    if y >= 0:
-        predictions.append(1)
-    elif y< 0:
-        predictions.append(-1)
 
-print("training a:", a_list)
-print("training b:", b)
+#print("training a:", a_list)
+#print("training b:", b)
 
 diff_list = []
 diff_lasso = []
@@ -59,14 +59,14 @@ incorrectno = 0
 
 for i in range (0, dv1):
     diff_list.append(max(0, 1-y_value[i]*y_va[i]))
-    diff_lasso.append(max(0, 1-y_value[i]*y_va[i]+0.001*sum(map(abs, a_list))))
+    diff_lasso.append(max(0, 1-y_value[i]*y_va[i]+0.0013*sum(map(abs, a_list))))
     if y_va[i] == 1:
-        if predictions[i] == 1:
+        if y_value[i] > 0:
             correctyes += 1
         else:
             incorrectno += 1
     else:
-        if predictions[i] == -1:
+        if y_value[i] <= 0:
             correctno += 1
         else:
             incorrectyes += 1
@@ -74,19 +74,19 @@ for i in range (0, dv1):
 max_diff_err = max(diff_list)
 total_diff_err = sum(diff_list)
 lasso_err = sum(diff_lasso)
-ridge_err = total_diff_err+0.001*sum(number*number for number in a_list)               ###need to change the tuning parameter 
+ridge_err = total_diff_err+0.0082*sum(number*number for number in a_list)               ###need to change the tuning parameter 
 print(sum(map(abs, a_list)))
 Accuracy = (correctyes+correctno)/(correctyes+correctno+incorrectno+incorrectyes)
 print("All error measures are calculated, please disregard the ones irrelevant with the method used")
 print("False Positive:", incorrectyes/104)
 print("False Negative:", incorrectno/104)
 print("Accuracy:", Accuracy)
+print("Misclassification Rate:", 1-Accuracy)
+print("Number of Misclassified items:", (incorrectno+incorrectyes))
 print("total error:", total_diff_err)
 print("max error", max_diff_err)
 print("Lasso Error", lasso_err)
-print("Ridge Error", ridge_err)
-
-
+print("Ridge Error", ridge_err) 
 
 
 #legacy code used for getting data from excel
